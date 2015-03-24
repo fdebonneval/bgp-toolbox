@@ -8,3 +8,6 @@ My note-taking repo, no idea what I'll do with it
 * http://bsdrp.net/documentation/examples/how_to_build_a_bsdrp_router_lab
 * http://www.freebsd.org/doc/en/articles/nanobsd/howto.html
 
+# Examples
+* https://www.m00nie.com/2014/01/bgp-rtbh-setup-using-exabgp/
+* BGP RTBH setup using exaBGP
