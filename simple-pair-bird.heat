@@ -7,13 +7,16 @@ description: Simple Heat template making two Bird instaces to peer
 parameters:
   key_name:
     type: string
-    description: foucault
+    default: foucault
 
   public_net_id:
     type: string
+    label: Public network
     description: The ID of the public network. You will need to replace it with your DevStack public network ID
-    default: public
-#    default: 4a0d5db1-f30f-491c-b342-af80143a31ea
+#    default: public
+    default: 6ea98324-0f14-49f6-97c0-885d1b8dc517
+    constraints:
+          - custom_constraint: neutron.network
 
   image_id:
     type: string
@@ -52,7 +55,6 @@ resources:
       cidr: 10.200.0.0/24
       enable_dhcp: true
 
-
   net_west:
     type: OS::Neutron::Net
     properties:
@@ -65,7 +67,7 @@ resources:
       cidr: 10.100.0.0/24
       enable_dhcp: true
 
-  # Security groups
+# Security groups
   secgroup-icmp:
     type: OS::Neutron::SecurityGroup
     properties:
@@ -85,23 +87,35 @@ resources:
     type: OS::Neutron::SecurityGroup
     properties:
       description: Enable traffic external traffic on HTTP.
-      rules: [{protocol: tcp, port_range_max: 80, port_range_min: 80},{protocol: tcp, port_range_max: 443, port_range_min: 443},]
+      rules: [{protocol: tcp, port_range_max: 1080, port_range_min: 1080},{protocol: tcp, port_range_max: 10443, port_range_min: 10443},]
 
 # Floating IPs
-  floating:
+  floating_exa:
     type: OS::Neutron::FloatingIP
     properties:
       floating_network_id: { get_param: public_net_id }
-  floating_assos:
+  floating_bird_0:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net_id }
+  floating_bird_1:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net_id }
+  floating_exa_assos:
     type: OS::Nova::FloatingIPAssociation
     properties:
-      floating_ip: { get_resource: floating }
+      floating_ip: { get_resource: floating_exa }
       server_id: { get_resource: i_exa }
+  floating_bird_0_assos:
+    type: OS::Nova::FloatingIPAssociation
     properties:
-      floating_ip: { get_resource: floating }
+      floating_ip: { get_resource: floating_bird_0 }
       server_id: { get_resource: i_bird_0 }
+  floating_bird_1_assos:
+    type: OS::Nova::FloatingIPAssociation
     properties:
-      floating_ip: { get_resource: floating }
+      floating_ip: { get_resource: floating_bird_1 }
       server_id: { get_resource: i_bird_1 }
 
 # VMs
@@ -135,7 +149,7 @@ resources:
   i_bird_0:
     type: OS::Nova::Server
     properties:
-      # Bastion
+      # Bird instance 0
       image: { get_param: image_id }
       flavor: { get_param: flavor_id }
       key_name: { get_param: key_name }
@@ -151,7 +165,7 @@ resources:
         echo ""
         export DEBIAN_FRONTEND=noninteractive
         apt-get update
-        apt-get -f -y -q install bird-bgp
+        apt-get -f -y -q install bird
         cat > /etc/network/interfaces.d/eth1.cfg <<EOF
         auto eth1
         iface eth1 inet dhcp
@@ -162,7 +176,7 @@ resources:
   i_bird_1:
     type: OS::Nova::Server
     properties:
-      # Bastion
+      # Bird instance 1
       image: { get_param: image_id }
       flavor: { get_param: flavor_id }
       key_name: { get_param: key_name }
@@ -178,7 +192,7 @@ resources:
         echo ""
         export DEBIAN_FRONTEND=noninteractive
         apt-get update
-        apt-get -f -y -q install bird-bgp
+        apt-get -f -y -q install bird
         cat > /etc/network/interfaces.d/eth1.cfg <<EOF
         auto eth1
         iface eth1 inet dhcp
@@ -192,27 +206,32 @@ resources:
       network_id: { get_resource: net_north }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
   bird_0_port_0:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_north }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
   bird_0_port_1:
-    type: OS::Neutron::Port
-    properties:
-      network_id: { get_resource: net_north }
-      fixed_ips:
-        - subnet_id: { get_resource: net_subnet_north }
-  bird_1_port_0:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_west }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_west }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+  bird_1_port_0:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: net_north }
+      fixed_ips:
+        - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
   bird_1_port_1:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_east }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_east }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
