@@ -146,6 +146,11 @@ resources:
         /sbin/ifdown eth1
         /sbin/ifup eth1
 
+        # Setting exabgp for daemonizing
+        sed -i \
+          -e "s#EXABGPRUN="no"#EXABGPRUN="yes"#g" \
+          /etc/default/exabgp
+
   i_bird_0:
     type: OS::Nova::Server
     properties:
