@@ -10,4 +10,6 @@ My note-taking repo, no idea what I'll do with it
 
 # Examples
 * https://www.m00nie.com/2014/01/bgp-rtbh-setup-using-exabgp/
-* BGP RTBH setup using exaBGP
+  * BGP RTBH setup using exaBGP
+* http://vincent.bernat.im/en/blog/2013-exabgp-highavailability.html
+  * Great example (from 2013) of L3 to the host routing
