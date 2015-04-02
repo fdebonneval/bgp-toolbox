@@ -72,22 +72,22 @@ resources:
     type: OS::Neutron::SecurityGroup
     properties:
       description: Enable traffic external traffic on SSH.
-      rules: [{protocol: icmp},]
+      rules: [{protocol: icmp}]
   secgroup-ssh:
     type: OS::Neutron::SecurityGroup
     properties:
       description: Enable traffic external traffic on SSH.
-      rules: [{protocol: tcp, port_range_max: 22, port_range_min: 22},]
+      rules: [{protocol: tcp, port_range_max: 22, port_range_min: 22}]
   secgroup-http-https:
     type: OS::Neutron::SecurityGroup
     properties:
       description: Enable traffic external traffic on HTTP.
-      rules: [{protocol: tcp, port_range_max: 80, port_range_min: 80},{protocol: tcp, port_range_max: 443, port_range_min: 443},]
+      rules: [{protocol: tcp, port_range_max: 80, port_range_min: 80},{protocol: tcp, port_range_max: 443, port_range_min: 443}]
   secgroup-bgp:
     type: OS::Neutron::SecurityGroup
     properties:
-      description: Enable traffic external traffic on HTTP.
-      rules: [{protocol: tcp, port_range_max: 1080, port_range_min: 1080},{protocol: tcp, port_range_max: 10443, port_range_min: 10443},]
+      description: Enable traffic external traffic on BGP.
+      rules: [{protocol: tcp, port_range_max: 179, port_range_min: 179},{protocol: tcp, port_range_max: 10443, port_range_min: 10443}]
 
 # Floating IPs
   floating_exa:
@@ -132,7 +132,6 @@ resources:
       user_data_format: RAW
       user_data:
         #!/bin/bash
-            
         echo "Preparing the instance to be ready to run with Heat..."
         echo "######################################################"
         echo ""
@@ -145,8 +144,7 @@ resources:
         EOF
         /sbin/ifdown eth1
         /sbin/ifup eth1
-
-        # Setting exabgp for daemonizing
+        echo "Setting exabgp for daemonizing"
         sed -i \
           -e "s#EXABGPRUN="no"#EXABGPRUN="yes"#g" \
           /etc/default/exabgp
@@ -164,7 +162,6 @@ resources:
       user_data_format: RAW
       user_data:
         #!/bin/bash
-        
         echo "Preparing the instance to be ready to run with Heat..."
         echo "######################################################"
         echo ""
@@ -191,7 +188,6 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/bash
-
         echo "Preparing the instance to be ready to run with Heat..."
         echo "######################################################"
         echo ""
@@ -211,32 +207,32 @@ resources:
       network_id: { get_resource: net_north }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_north }
-      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
   bird_0_port_0:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_north }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_north }
-      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
   bird_0_port_1:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_west }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_west }
-      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
   bird_1_port_0:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_north }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_north }
-      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
   bird_1_port_1:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: net_east }
       fixed_ips:
         - subnet_id: { get_resource: net_subnet_east }
-      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }]
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
