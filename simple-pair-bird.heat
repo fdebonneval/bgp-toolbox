@@ -129,25 +129,6 @@ resources:
       key_name: { get_param: key_name }
       networks:
         - port: { get_resource: exa_port_0 }
-      user_data_format: RAW
-      user_data:
-        #!/bin/bash
-        echo "Preparing the instance to be ready to run with Heat..."
-        echo "######################################################"
-        echo ""
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update
-        apt-get -f -y -q install exabgp
-        cat > /etc/network/interfaces.d/eth1.cfg <<EOF
-        auto eth1
-        iface eth1 inet dhcp
-        EOF
-        /sbin/ifdown eth1
-        /sbin/ifup eth1
-        echo "Setting exabgp for daemonizing"
-        sed -i \
-          -e "s#EXABGPRUN="no"#EXABGPRUN="yes"#g" \
-          /etc/default/exabgp
 
   i_bird_0:
     type: OS::Nova::Server
@@ -159,21 +140,6 @@ resources:
       networks:
         - port: { get_resource: bird_0_port_0 }
         - port: { get_resource: bird_0_port_1 }
-      user_data_format: RAW
-      user_data:
-        #!/bin/bash
-        echo "Preparing the instance to be ready to run with Heat..."
-        echo "######################################################"
-        echo ""
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update
-        apt-get -f -y -q install bird
-        cat > /etc/network/interfaces.d/eth1.cfg <<EOF
-        auto eth1
-        iface eth1 inet dhcp
-        EOF
-        /sbin/ifdown eth1
-        /sbin/ifup eth1
 
   i_bird_1:
     type: OS::Nova::Server
@@ -185,21 +151,6 @@ resources:
       networks:
         - port: { get_resource: bird_1_port_0 }
         - port: { get_resource: bird_1_port_1 }
-      user_data_format: RAW
-      user_data: |
-        #!/bin/bash
-        echo "Preparing the instance to be ready to run with Heat..."
-        echo "######################################################"
-        echo ""
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update
-        apt-get -f -y -q install bird
-        cat > /etc/network/interfaces.d/eth1.cfg <<EOF
-        auto eth1
-        iface eth1 inet dhcp
-        EOF
-        /sbin/ifdown eth1
-        /sbin/ifup eth1
 
   exa_port_0:
     type: OS::Neutron::Port
