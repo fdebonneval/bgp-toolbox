@@ -17,6 +17,7 @@
   sudo: True
   tasks:
   - template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
+  - template: src=roles/common/templates/eth1.cfg dest=/etc/network/interfaces.d/eth1.cfg owner=root group=root mode=0444
   - name: Install bird routing daemon
     apt: name=bird state=present
     ignore_errors: True

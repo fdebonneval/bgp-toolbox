@@ -88,6 +88,11 @@ resources:
     properties:
       description: Enable traffic external traffic on BGP.
       rules: [{protocol: tcp, port_range_max: 179, port_range_min: 179},{protocol: tcp, port_range_max: 10443, port_range_min: 10443}]
+#  secgroup-iperf:
+#    type: OS::Neutron::SecurityGroup
+#    properties:
+#      description: Enable traffic external traffic on iperf.
+#      rules: [{protocol: tcp, port_range_max: 5001, port_range_min: 5005}]
 
 # Floating IPs
   floating_exa:
