@@ -14,6 +14,8 @@ My note-taking repo, no idea what I'll do with it
   * BGP RTBH setup using exaBGP
 * http://vincent.bernat.im/en/blog/2013-exabgp-highavailability.html
   * Great example (from 2013) of L3 to the host routing
+* http://bsdrp.net/documentation/examples
+  * Thanks for the examples
 
 # Ansible commands reference
 * Getting all informations and variables usable on nodes (facts)
