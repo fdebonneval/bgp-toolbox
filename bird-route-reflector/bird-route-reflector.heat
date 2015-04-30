@@ -1,0 +1,150 @@
+# vim: syntax=yaml
+
+heat_template_version: 2013-05-23
+
+description: Simple Heat template making two Bird instaces to peer
+
+parameters:
+  foucault:
+    type: string
+    default: foucault
+
+  public_net:
+    type: string
+    label: Public network
+    description: The ID of the public network. You will need to replace it with your DevStack public network ID
+#    default: public
+    default: 6ea98324-0f14-49f6-97c0-885d1b8dc517
+    constraints:
+          - custom_constraint: neutron.network
+
+  ubuntu-1404:
+    type: string
+    description: Image to use for the instance
+    default: Ubuntu 14.04
+
+  s1.cw.small-1:
+    type: string
+    description: Flavor 2Go 20Go 1vcpu
+    default: s1.cw.small-1
+
+resources:
+
+  # Network
+  net_north:
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: true
+      shared: false
+  net_subnet_north:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: net_north }
+      cidr: 10.255.0.0/24
+      enable_dhcp: true
+
+# Security groups
+  secgroup-icmp:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Enable traffic external traffic on SSH.
+      rules: [{protocol: icmp}]
+  secgroup-ssh:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Enable traffic external traffic on SSH.
+      rules: [{protocol: tcp, port_range_max: 22, port_range_min: 22}]
+  secgroup-http-https:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Enable traffic external traffic on HTTP.
+      rules: [{protocol: tcp, port_range_max: 80, port_range_min: 80},{protocol: tcp, port_range_max: 443, port_range_min: 443}]
+  secgroup-bgp:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Enable traffic external traffic on BGP.
+      rules: [{protocol: tcp, port_range_max: 179, port_range_min: 179},{protocol: tcp, port_range_max: 10443, port_range_min: 10443}]
+
+  floating_exa_0:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net }
+  floating_exa_1:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net }
+  floating_bird_0:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net }
+  floating_exa_0_assos:
+    type: OS::Nova::FloatingIPAssociation
+    properties:
+      floating_ip: { get_resource: floating_exa_0 }
+      server_id: { get_resource: i_exa_0 }
+  floating_exa_1_assos:
+    type: OS::Nova::FloatingIPAssociation
+    properties:
+      floating_ip: { get_resource: floating_exa_1 }
+      server_id: { get_resource: i_exa_1 }
+  floating_bird_0_assos:
+    type: OS::Nova::FloatingIPAssociation
+    properties:
+      floating_ip: { get_resource: floating_bird_0 }
+      server_id: { get_resource: i_bird_0 }
+
+
+# VMs
+  i_exa_0:
+    type: OS::Nova::Server
+    properties:
+      # ExaBGP backend 0
+      image: { get_param: ubuntu-1404 }
+      flavor: { get_param: s1.cw.small-1 }
+      key_name: { get_param: foucault }
+      networks:
+        - port: { get_resource: exa_0_port_0 }
+
+  i_exa_1:
+    type: OS::Nova::Server
+    properties:
+      # ExaBGP backend 1
+      image: { get_param: ubuntu-1404 }
+      flavor: { get_param: s1.cw.small-1 }
+      key_name: { get_param: foucault }
+      networks:
+        - port: { get_resource: exa_1_port_0 }
+
+  i_bird_0:
+    type: OS::Nova::Server
+    properties:
+      # Bird RR instance 0
+      image: { get_param: ubuntu-1404 }
+      flavor: { get_param: s1.cw.small-1 }
+      key_name: { get_param: foucault }
+      networks:
+        - port: { get_resource: bird_0_port_0 }
+
+  exa_0_port_0:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: net_north }
+      fixed_ips:
+        - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
+  exa_1_port_0:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: net_north }
+      fixed_ips:
+        - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
+  bird_0_port_0:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: net_north }
+      fixed_ips:
+        - subnet_id: { get_resource: net_subnet_north }
+      security_groups: [{ get_resource: secgroup-icmp }, { get_resource: secgroup-ssh }, { get_resource: secgroup-bgp }]
+
+

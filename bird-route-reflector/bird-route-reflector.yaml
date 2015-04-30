@@ -1,0 +1,22 @@
+- hosts: all
+  sudo: True
+  tasks:
+  - template: src=roles/common/templates/policy-rc.d dest=/usr/sbin/policy-rc.d owner=root group=root mode=0755
+  - name: run apt-get update on all nodes
+    apt: update_cache=yes cache_valid_time=86400
+
+- hosts: exa
+  sudo: True
+  tasks:
+  - name: Install exabgp
+    apt: name=exabgp,python-ipaddr state=present
+    ignore_errors: True
+  - template: src=roles/common/templates/exabgp.conf dest=/etc/exabgp/exabgp.conf owner=root group=root mode=0444
+
+- hosts: bird
+  sudo: True
+  tasks:
+  - name: Install bird routing daemon
+    apt: name=bird state=present
+    ignore_errors: True
+  - template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
