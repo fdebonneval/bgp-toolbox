@@ -23,3 +23,6 @@ My note-taking repo, no idea what I'll do with it
   * ansible bgp-lab -m setup
 * Getting all node status with ansible ping
   * ansible bgp-lab -m ping
+
+# Exabgp command reference
+ announce route 1.0.0.0/21 next-hop 101.1.101.1 med 200 community [2:1] split /23'
