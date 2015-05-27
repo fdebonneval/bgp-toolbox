@@ -1,2 +1,3 @@
 *.inv
 terraform.*
+.ansible.cfg
