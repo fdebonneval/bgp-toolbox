@@ -1,0 +1,14 @@
+[router]
+192.168.199.3
+192.168.199.4
+
+[hyp]
+192.168.199.2
+192.168.199.5
+
+[all:children]
+router
+hyp
+
+[all:vars]
+ansible_ssh_user = cloud
