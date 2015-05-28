@@ -67,8 +67,8 @@ resource "openstack_networking_subnet_v2" "tf-subnet-bgp-lab-usr-03" {
 resource "openstack_networking_router_v2" "tf-bgp-lab-router-admin-00" {
   name = "tf-bgp-lab-router-admin-00"
   admin_state_up = "true"
-  external_gateway = "ca80ff29-4f29-49a5-aa22-549f31b09268"
-  region = "fr1"
+  external_gateway = "6ea98324-0f14-49f6-97c0-885d1b8dc517"
+  region = ""
 }
 
 resource "openstack_networking_router_interface_v2" "tf-bgp-lab-router-admin" {
@@ -80,6 +80,19 @@ resource "openstack_networking_router_interface_v2" "tf-bgp-lab-router-admin" {
 resource "openstack_networking_floatingip_v2" "tf-floating-00" {
   region = "fr1"
   pool = "public"
+}
+
+# Create bastion server
+resource "openstack_compute_instance_v2" "tf-bst-00" {
+  name = "tf-bst-00"
+  region = "fr1"
+  network {
+    uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-admin.id}"
+  }
+  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  flavor_id = "17"
+  key_pair = "foucault"
+  security_groups = ["icmp-ssh","bgp"]
 }
 
 # Create routers servers
@@ -155,3 +168,6 @@ resource "openstack_compute_instance_v2" "tf-hyp-01" {
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
 }
+
+# Outputs
+
