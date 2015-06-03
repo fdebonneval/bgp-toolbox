@@ -2,6 +2,10 @@
 
 provider "openstack" {
 # endpoints, credentials are taken from environment variables
+  auth_url = "${var.auth_url}"
+  tenant_name = "${var.tenant_name}"
+  user_name = "${var.username}"
+  password = "${var.password}"
 }
 
 # Networks creation
@@ -89,7 +93,20 @@ resource "openstack_compute_instance_v2" "tf-bst-00" {
   network {
     uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-admin.id}"
   }
-  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
+  flavor_id = "17"
+  key_pair = "foucault"
+  security_groups = ["icmp-ssh","bgp"]
+}
+
+# Create registry server / Consul
+resource "openstack_compute_instance_v2" "tf-reg-00" {
+  name = "tf-reg-00"
+  region = "fr1"
+  network {
+    uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-admin.id}"
+  }
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
@@ -108,10 +125,15 @@ resource "openstack_compute_instance_v2" "tf-bird-00" {
   network {
     uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-usr-02.id}"
   }
-  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
+  provisioner "local-exec" {
+  command = "echo '[router]' > ansible.inv"
+  command = "echo ${openstack_compute_instance_v2.tf-bird-00.access_ip_v4} >> ansible.inv"
+  }
+  count = 1
 }
 
 resource "openstack_compute_instance_v2" "tf-bird-01" {
@@ -126,10 +148,14 @@ resource "openstack_compute_instance_v2" "tf-bird-01" {
   network {
     uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-usr-03.id}"
   }
-  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
+  provisioner "local-exec" {
+    command = "echo ${openstack_compute_instance_v2.tf-bird-01.access_ip_v4} >> ansible.inv"
+  }
+  count = 1
 }
 
 # Create compute nodes
@@ -145,10 +171,15 @@ resource "openstack_compute_instance_v2" "tf-hyp-00" {
   network {
     uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-usr-01.id}"
   }
-  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
+  provisioner "local-exec" {
+    command = "echo '[hyp]' >> ansible.inv"
+    command = "echo ${openstack_compute_instance_v2.tf-hyp-00.access_ip_v4} >> ansible.inv"
+  }
+  count = 1
 }
 
 resource "openstack_compute_instance_v2" "tf-hyp-01" {
@@ -163,11 +194,15 @@ resource "openstack_compute_instance_v2" "tf-hyp-01" {
   network {
     uuid = "${openstack_networking_network_v2.tf-net-bgp-lab-usr-03.id}"
   }
-  image_id = "cc2e31fc-c24d-4905-bb45-1d57794a4f3c"
+  image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "21"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
+  provisioner "local-exec" {
+    command = "echo ${openstack_compute_instance_v2.tf-hyp-01.access_ip_v4} >> ansible.inv"
+    command = "echo '[all:children]\nrouter\nhyp\n[all:vars]\nansible_ssh_user = cloud"
+  }
+  count = 1
 }
 
 # Outputs
-
