@@ -5,6 +5,7 @@
 * http://www.linuxfoundation.org/collaborate/workgroups/networking/bridge
 
 # Cammands sent to set-up the first hypervisor
+ ip link set dev eth2 up
  ip netns add ns-usr
  brctl addbr br-usr
  brctl stp br-usr off
@@ -13,5 +14,9 @@
  ip link add tap-ns-usr type veth peer name tap-br-usr
  brctl addif br-usr tap-br-usr
  ip link set tap-ns-usr netns ns-usr
+ ip link set dev tap-br-usr up
  ip netns exec ns-usr ip link set dev tap-ns-usr up
- for f in /proc/sys/net/bridge/bridge-nf-*; do echo 0 > $f; done
+ ??? for f in /proc/sys/net/bridge/bridge-nf-*; do echo 0 > $f; done
+
+# Troubleshooting
+ ip addr flush dev eth0
