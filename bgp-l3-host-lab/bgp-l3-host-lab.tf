@@ -2,10 +2,7 @@
 
 provider "openstack" {
 # endpoints, credentials are taken from environment variables
-  auth_url = "${var.auth_url}"
-  tenant_name = "${var.tenant_name}"
-  user_name = "${var.username}"
-  password = "${var.password}"
+#  insecure = "true"
 }
 
 # Networks creation
@@ -86,6 +83,41 @@ resource "openstack_networking_floatingip_v2" "tf-floating-00" {
   pool = "public"
 }
 
+# Security groups
+resource "openstack_compute_secgroup_v2" "tf-sg-icmp-ssh" {
+  name = "tf-sg-icmp-ssh"
+  description = "ICMP and SSH Security groups"
+  rule {
+    ip_protocol = "tcp"
+    from_port = "22"
+    to_port = "22"
+    cidr = "0.0.0.0/0"
+  }
+  rule {
+    ip_protocol = "icmp"
+    from_port = "-1"
+    to_port = "-1"
+    cidr = "0.0.0.0/0"
+  }
+}
+
+resource "openstack_compute_secgroup_v2" "tf-sg-consul" {
+  name = "tf-sg-consul"
+  description = "ICMP and SSH Security groups"
+  rule {
+    ip_protocol = "tcp"
+    from_port = "53"
+    to_port = "53"
+    cidr = "0.0.0.0/0"
+  }
+  rule {
+    ip_protocol = "tcp"
+    from_port = "8500"
+    to_port = "8500"
+    cidr = "0.0.0.0/0"
+  }
+}
+
 # Create bastion server
 resource "openstack_compute_instance_v2" "tf-bst-00" {
   name = "tf-bst-00"
@@ -96,7 +128,7 @@ resource "openstack_compute_instance_v2" "tf-bst-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-consul"]
 }
 
 # Create registry server / Consul
@@ -109,7 +141,7 @@ resource "openstack_compute_instance_v2" "tf-reg-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-consul"]
 }
 
 # Create routers servers
@@ -129,11 +161,8 @@ resource "openstack_compute_instance_v2" "tf-bird-00" {
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
-  provisioner "local-exec" {
-  command = "echo '[router]' > ansible.inv"
-  command = "echo ${openstack_compute_instance_v2.tf-bird-00.access_ip_v4} >> ansible.inv"
-  }
   count = 1
+  depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
 
 resource "openstack_compute_instance_v2" "tf-bird-01" {
@@ -152,10 +181,8 @@ resource "openstack_compute_instance_v2" "tf-bird-01" {
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
-  provisioner "local-exec" {
-    command = "echo ${openstack_compute_instance_v2.tf-bird-01.access_ip_v4} >> ansible.inv"
-  }
   count = 1
+  depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
 
 # Create compute nodes
@@ -175,11 +202,8 @@ resource "openstack_compute_instance_v2" "tf-hyp-00" {
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
-  provisioner "local-exec" {
-    command = "echo '[hyp]' >> ansible.inv"
-    command = "echo ${openstack_compute_instance_v2.tf-hyp-00.access_ip_v4} >> ansible.inv"
-  }
   count = 1
+  depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
 
 resource "openstack_compute_instance_v2" "tf-hyp-01" {
@@ -198,11 +222,26 @@ resource "openstack_compute_instance_v2" "tf-hyp-01" {
   flavor_id = "21"
   key_pair = "foucault"
   security_groups = ["icmp-ssh","bgp"]
-  provisioner "local-exec" {
-    command = "echo ${openstack_compute_instance_v2.tf-hyp-01.access_ip_v4} >> ansible.inv"
-    command = "echo '[all:children]\nrouter\nhyp\n[all:vars]\nansible_ssh_user = cloud"
-  }
   count = 1
+  depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
 
 # Outputs
+output "tf-reg-00" {
+  value = "${openstack_compute_instance_v2.tf-reg-00.access_ip_v4}"
+}
+output "tf-bst-00" {
+  value = "${openstack_compute_instance_v2.tf-bst-00.access_ip_v4}"
+}
+output "tf-bird-00" {
+  value = "${openstack_compute_instance_v2.tf-bird-00.access_ip_v4}"
+}
+output "tf-bird-01" {
+  value = "${openstack_compute_instance_v2.tf-bird-01.access_ip_v4}"
+}
+output "tf-hyp-00" {
+  value = "${openstack_compute_instance_v2.tf-hyp-00.access_ip_v4}"
+}
+output "tf-hyp-01" {
+  value = "${openstack_compute_instance_v2.tf-hyp-01.access_ip_v4}"
+}

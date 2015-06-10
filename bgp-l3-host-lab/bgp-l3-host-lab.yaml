@@ -1,10 +1,49 @@
 - hosts: all
   sudo: True
   tasks:
+  - name: Install bird ppa repository
+    apt_repository: repo='ppa:cz.nic-labs/bird' state=present
   - template: src=roles/common/templates/policy-rc.d dest=/usr/sbin/policy-rc.d owner=root group=root mode=0755
   - name: run apt-get update on all nodes
     apt: update_cache=yes cache_valid_time=86400
+  - name: Update pip
+    pip: name=pip version=7.0.3
+
+- hosts: router:hyp
+  sudo: True
+  tasks:
   - name: Install bird routing daemon
     apt: name=bird state=present
     ignore_errors: True
   - template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
+
+- hosts: reg
+  sudo: True
+  tasks:
+  - name: Install docker apt Key
+    apt_key: keyserver=p80.pool.sks-keyservers.net id=36A1D7869245C8950F966E92D8576A8BA88D21E9
+  - name: Install Docker rpository
+    apt_repository: repo='deb https://get.docker.com/ubuntu docker main'
+  - name: Run apt-get update
+    apt: update_cache=yes
+  - name: Install lxc-docker
+    apt: name=lxc-docker state=present
+  - name: remove docker init file (ansible manages init before upstrat)
+    file: path=/etc/init.d/docker state=absent
+  - name: Start Docker
+    service: name=docker state=started
+  - name: Install docker-py using pip
+    pip: name=docker-py version=1.1.0 state=present
+  - name: Create a user to run docker commands
+    user: name=docker comment="Docker user" group=docker
+
+- hosts: reg
+  sudo: True
+#  sudo_user: docker
+  tasks:
+  - name: Start a test docker
+    docker:
+      name: test-container
+      image: ubuntu
+      command: /bin/sh -c "while true; do date; sleep 1; done"
+      state: started
