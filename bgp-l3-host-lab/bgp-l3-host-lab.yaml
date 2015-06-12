@@ -39,11 +39,16 @@
 
 - hosts: reg
   sudo: True
-#  sudo_user: docker
+  sudo_user: docker
   tasks:
   - name: Start a test docker
     docker:
-      name: test-container
-      image: ubuntu
-      command: /bin/sh -c "while true; do date; sleep 1; done"
+      name: consul-registry
+      image: progrium/consul
+      ports:
+      - 53:53
+      - 53:53/udp
+      - 8400:8400
+      - 8500:8500
+      command: -server -bootstrap -ui-dir /ui
       state: started

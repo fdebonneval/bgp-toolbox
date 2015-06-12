@@ -20,3 +20,9 @@
 
 # Troubleshooting
  ip addr flush dev eth0
+
+# Terraform example with consul
+ https://github.com/deverton/terraform-aws-consul
+
+# Terraform, pointing to a cloudinit file
+ user_data = "${file(\"files/consul/cloud-init.txt\")}"

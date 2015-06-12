@@ -5,6 +5,12 @@ provider "openstack" {
 #  insecure = "true"
 }
 
+provider "consul" {
+    address = "${openstack_compute_instance_v2.tf-reg-00.access_ip_v4}:8500"
+    scheme = "http"
+    datacenter = "dc1"
+}
+
 # Networks creation
 resource "openstack_networking_network_v2" "tf-net-bgp-lab-admin" {
   name = "tf-net-bgp-lab-admin"
@@ -103,9 +109,15 @@ resource "openstack_compute_secgroup_v2" "tf-sg-icmp-ssh" {
 
 resource "openstack_compute_secgroup_v2" "tf-sg-consul" {
   name = "tf-sg-consul"
-  description = "ICMP and SSH Security groups"
+  description = "Consul security group"
   rule {
     ip_protocol = "tcp"
+    from_port = "53"
+    to_port = "53"
+    cidr = "0.0.0.0/0"
+  }
+  rule {
+    ip_protocol = "udp"
     from_port = "53"
     to_port = "53"
     cidr = "0.0.0.0/0"
@@ -116,7 +128,26 @@ resource "openstack_compute_secgroup_v2" "tf-sg-consul" {
     to_port = "8500"
     cidr = "0.0.0.0/0"
   }
+  rule {
+    ip_protocol = "tcp"
+    from_port = "8400"
+    to_port = "8400"
+    cidr = "0.0.0.0/0"
+  }
 }
+
+resource "openstack_compute_secgroup_v2" "tf-sg-bgp" {
+  name = "tf-sg-bgp"
+  description = "BGP Security groups"
+  rule {
+    ip_protocol = "tcp"
+    from_port = "179"
+    to_port = "179"
+    cidr = "0.0.0.0/0"
+  }
+}
+
+
 
 # Create bastion server
 resource "openstack_compute_instance_v2" "tf-bst-00" {
@@ -129,6 +160,15 @@ resource "openstack_compute_instance_v2" "tf-bst-00" {
   flavor_id = "17"
   key_pair = "foucault"
   security_groups = ["tf-sg-icmp-ssh","tf-sg-consul"]
+}
+
+# Register bst ip into consul
+resource "consul_keys" "app" {
+    key {
+        name = "bst-ip"
+        path = "service/app/bst-ip"
+        value = "${openstack_compute_instance_v2.tf-bst-00.network.0.fixed_ip_v4}"
+    }
 }
 
 # Create registry server / Consul
@@ -160,7 +200,7 @@ resource "openstack_compute_instance_v2" "tf-bird-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -180,7 +220,7 @@ resource "openstack_compute_instance_v2" "tf-bird-01" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -201,7 +241,7 @@ resource "openstack_compute_instance_v2" "tf-hyp-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -221,7 +261,7 @@ resource "openstack_compute_instance_v2" "tf-hyp-01" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "21"
   key_pair = "foucault"
-  security_groups = ["icmp-ssh","bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
