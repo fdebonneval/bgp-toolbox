@@ -26,3 +26,11 @@
 
 # Terraform, pointing to a cloudinit file
  user_data = "${file(\"files/consul/cloud-init.txt\")}"
+
+# Terraform tips for instances naming
+ resource "aws_instance" "web" {
+     count = 5
+     tags {
+         Name = "web-${count.index+1}"
+     }
+ }

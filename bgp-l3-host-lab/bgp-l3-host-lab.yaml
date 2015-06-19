@@ -3,6 +3,8 @@
   tasks:
   - name: Install bird ppa repository
     apt_repository: repo='ppa:cz.nic-labs/bird' state=present
+  - name: Install Consul ppa repository
+    apt_repository: repo='deb http://ppa.launchpad.net/bcandrea/consul/ubuntu trusty main'
   - template: src=roles/common/templates/policy-rc.d dest=/usr/sbin/policy-rc.d owner=root group=root mode=0755
   - name: run apt-get update on all nodes
     apt: update_cache=yes cache_valid_time=86400
@@ -15,6 +17,12 @@
   - name: Install bird routing daemon
     apt: name=bird state=present
     ignore_errors: True
+  - name: Install unzip
+    apt: name=unzip state=present
+  - name: Download Consul binary file from local
+    get_url: url=https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip dest=/tmp mode=0440
+  - name: Unarchive Consul binary file
+    unarchive: src=/tmp/0.5.2_linux_amd64.zip dest=/usr/local/bin copy=no
   - template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
 
 - hosts: reg
@@ -41,13 +49,16 @@
   sudo: True
   sudo_user: docker
   tasks:
-  - name: Start a test docker
+  - name: Start a Consul docker
     docker:
       name: consul-registry
       image: progrium/consul
       ports:
       - 53:53
       - 53:53/udp
+      - 8300:8300
+      - 8301:8301
+      - 8301:8301/udp
       - 8400:8400
       - 8500:8500
       command: -server -bootstrap -ui-dir /ui
