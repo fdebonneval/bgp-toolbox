@@ -4,14 +4,14 @@
   - name: Install bird ppa repository
     apt_repository: repo='ppa:cz.nic-labs/bird' state=present
   - name: Install Consul ppa repository
-    apt_repository: repo='deb http://ppa.launchpad.net/bcandrea/consul/ubuntu trusty main'
+    apt_repository: repo='deb http://ppa.launchpad.net/bcandrea/consul/ubuntu trusty main' state=absent
   - template: src=roles/common/templates/policy-rc.d dest=/usr/sbin/policy-rc.d owner=root group=root mode=0755
   - name: run apt-get update on all nodes
     apt: update_cache=yes cache_valid_time=86400
   - name: Update pip
     pip: name=pip version=7.0.3
 
-- hosts: router:hyp
+- hosts: router:hyp:bst
   sudo: True
   tasks:
   - name: Install bird routing daemon
@@ -23,7 +23,17 @@
     get_url: url=https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip dest=/tmp mode=0440
   - name: Unarchive Consul binary file
     unarchive: src=/tmp/0.5.2_linux_amd64.zip dest=/usr/local/bin copy=no
-  - template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
+  - name: Create Consul folders
+    file: path=/etc/consul state=directory mode=0755
+    file: path=/etc/consul/consul.d state=directory mode=0755
+  - name: Copy Consul upstart file
+    template: src=roles/common/files/consul.conf dest=/etc/init owner=root group=root mode=0444
+  - name: Copy Consul configuration file
+    template: src=roles/common/templates/consul.conf.j2 dest=/etc/consul/consul.conf owner=root group=root mode=0444
+  - name: Copy Bird config file
+    template: src=roles/common/templates/bird.conf dest=/etc/bird/bird.conf owner=root group=root mode=0444
+  - name: Start Consul
+    service: name=consul state=started
 
 - hosts: reg
   sudo: True
@@ -61,5 +71,5 @@
       - 8301:8301/udp
       - 8400:8400
       - 8500:8500
-      command: -server -bootstrap -ui-dir /ui
+      command: -node={{ ansible_nodename }} -advertise={{ ansible_eth0.ipv4.address }} -server -bootstrap -ui-dir /ui
       state: started

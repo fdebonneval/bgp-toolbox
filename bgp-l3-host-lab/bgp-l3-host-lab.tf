@@ -111,6 +111,12 @@ resource "openstack_compute_secgroup_v2" "tf-sg-consul" {
   name = "tf-sg-consul"
   description = "Consul security group"
   rule {
+    ip_protocol = "icmp"
+    from_port = "-1"
+    to_port = "-1"
+    cidr = "0.0.0.0/0"
+  }
+  rule {
     ip_protocol = "tcp"
     from_port = "53"
     to_port = "53"
@@ -177,7 +183,7 @@ resource "openstack_compute_instance_v2" "tf-bst-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["tf-sg-icmp-ssh","tf-sg-consul"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-consul","tf-sg-consul"]
 }
 
 # Register bst ip into consul
@@ -221,7 +227,7 @@ resource "openstack_compute_instance_v2" "tf-bird-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp","tf-sg-consul"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -241,7 +247,7 @@ resource "openstack_compute_instance_v2" "tf-bird-01" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp","tf-sg-consul"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -262,7 +268,7 @@ resource "openstack_compute_instance_v2" "tf-hyp-00" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "17"
   key_pair = "foucault"
-  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp","tf-sg-consul"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
@@ -282,7 +288,7 @@ resource "openstack_compute_instance_v2" "tf-hyp-01" {
   image_id = "ae3082cb-fac1-46b1-97aa-507aaa8f184f"
   flavor_id = "21"
   key_pair = "foucault"
-  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp"]
+  security_groups = ["tf-sg-icmp-ssh","tf-sg-bgp","tf-sg-consul"]
   count = 1
   depends_on = ["openstack_compute_instance_v2.tf-reg-00"]
 }
