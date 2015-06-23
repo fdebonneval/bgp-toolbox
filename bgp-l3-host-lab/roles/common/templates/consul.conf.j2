@@ -1,0 +1,3 @@
+{% for registry in groups['reg'] %}
+CONSUL_FLAGS="-data-dir {{ consul_data_dir }} -join={{ registry }}"
+{% endfor %}
