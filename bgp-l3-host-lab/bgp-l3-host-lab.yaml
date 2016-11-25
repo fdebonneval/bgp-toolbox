@@ -35,6 +35,20 @@
   - name: Start Consul
     service: name=consul state=started
 
+- hosts: router:hyp
+  sudo: True
+  tasks:
+  - name: Install interfaces files for hyp and routers
+    template: src=roles/common/files/{{ item }}.cfg dest=/etc/network/interfaces.d/{{ item }}.cfg
+    with_items:
+    - eth1
+    - eth2
+  - name: Interface ifdown - ifup
+    shell: ifdown {{ item }}; ifup {{ item }}
+    with_items:
+    - eth1
+    - eth2
+
 - hosts: reg
   sudo: True
   tasks:

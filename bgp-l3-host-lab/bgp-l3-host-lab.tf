@@ -5,11 +5,11 @@ provider "openstack" {
 #  insecure = "true"
 }
 
-provider "consul" {
-    address = "${openstack_compute_instance_v2.tf-reg-00.access_ip_v4}:8500"
-    scheme = "http"
-    datacenter = "dc1"
-}
+#provider "consul" {
+#    address = "${openstack_compute_instance_v2.tf-reg-00.access_ip_v4}:8500"
+#    scheme = "http"
+#    datacenter = "dc1"
+#}
 
 # Networks creation
 resource "openstack_networking_network_v2" "tf-net-bgp-lab-admin" {
@@ -79,11 +79,11 @@ resource "openstack_networking_router_v2" "tf-bgp-lab-router-admin-00" {
 }
 
 resource "openstack_networking_router_interface_v2" "tf-bgp-lab-router-admin" {
-    region = "fr1"
     router_id = "${openstack_networking_router_v2.tf-bgp-lab-router-admin-00.id}"
     subnet_id = "${openstack_networking_subnet_v2.tf-subnet-bgp-lab-admin.id}"
 }
 
+# Floatingip
 resource "openstack_networking_floatingip_v2" "tf-floating-00" {
   region = "fr1"
   pool = "public"
